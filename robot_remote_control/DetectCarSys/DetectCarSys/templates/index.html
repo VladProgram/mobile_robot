@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head><!--initial setting-->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Remote Controller</title>
+    <script src="{{ url_for('static', filename='js/jquery-3.7.1.min.js') }}"></script><!--find jquery's js file-->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}"><!--loading css-->
+</head>
+
+<header><!--define header-->
+    <h1>Remote Controller</h1>
+</header>
+
+<body><!--showing capture from camera-->
+<div id="image-container">
+    <img id="uploaded-image" src="{{ url_for('static', filename='Capture/image.jpg') }}" alt="Uploaded Image will appear here">
+</div>
+
+<div class="button-container"><!--buttom settings-->
+    <div class="button-row"><!--buttom is devided for three lows-->
+        <button class="send-button" data-value="F" style="touch-action: none; user-select: none;" oncontextmenu="return false;">Forward</button>
+    </div>
+    <div class="button-row">
+        <button class="send-button" data-value="L" style="touch-action: none; user-select: none;" oncontextmenu="return false;">Left</button>
+        <button class="send-button" data-value="S" style="touch-action: none; user-select: none;" oncontextmenu="return false;">Stop</button>
+        <button class="send-button" data-value="R" style="touch-action: none; user-select: none;" oncontextmenu="return false;">Right</button>
+    </div>
+    <div class="button-row">
+        <button class="send-button" data-value="B" style="touch-action: none; user-select: none;" >Back</button>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    var intervalId;
+    var intervalDuration = 200
+    setInterval(updateImage, 1000);
+
+    // function for sending buttom value data for server. using ajax module in jquary
+    function sendData(buttonValue) {
+        $.ajax({
+            url: '/send_data',
+            type: 'POST',
+            contentType: 'application/json;charset=UTF-8',
+            data: JSON.stringify({ button_value: buttonValue }),
+            dataType: 'json',
+            success: function(response) {
+                //console.log('Data sent: ' + response.value);
+            },
+            error: function(error) {
+                console.error('Error', error);
+            }
+        });
+    }
+
+    // this function will start when the buttom is pushed
+    // if buttom is pushed, Sending data per intervalDuration
+    function startSendingData(buttonValue) {
+        if (!intervalId) { // すでに送信中でなければ送信を開始
+            intervalId = setInterval(function() {
+                sendData(buttonValue);
+            }, intervalDuration); 
+        }
+    }
+
+    // stop sending data function
+    function stopSendingData() {
+        if (intervalId) {
+            clearInterval(intervalId);
+            intervalId = null;
+        }
+    }
+
+    // update showing capture getting from camera
+    function updateImage() {
+        $("#uploaded-image").attr("src", "{{ url_for('static', filename='Capture/image.jpg') }}?" + new Date().getTime());
+    }
+
+    // torch event setting for cellphone
+    $('.send-button').on('touchstart', function() {
+        var buttonValue = $(this).attr('data-value');
+        startSendingData(buttonValue);
+    }).on('touchend', function() {
+        stopSendingData();
+    });
+
+});
+</script>
+</body>
+</html>
