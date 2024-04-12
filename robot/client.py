@@ -5,7 +5,7 @@ import time
 
 
 from robot.tools.daemon import *
-from robot.tools.openai import *
+from robot.tools.predictors import *
 
 
 class BaseRobotCommandsDaemon(DaemonBase):
@@ -15,30 +15,34 @@ class BaseRobotCommandsDaemon(DaemonBase):
     self.url_frame = f"{self.url_base}/frame"
     self.url_command = f"{self.url_base}/command"
     self.frame = None
+    self.frame_play = None
     print(type(self).__name__, "init", self.url_base)
 
-  def play(self):
-    if self.frame is not None:
-      cv2.imshow('Frame', self.frame)
-      cv2.waitKey(1)
-
-
-class RobotDummyCommandsDaemon(BaseRobotCommandsDaemon):
-  def __init__(self, ip, period=3):
-    super().__init__(ip, period)
-    self.idx = 0
-    self.move = ['F', 'F', 'R', 'F', 'R', 'F', 'F', 'R', 'F', 'R', 'F', 'F']
-
-  def loop(self):
-    response = requests.get(self.url_command, params={'move': self.move[self.idx]})
+  def command(self, prediction):
+    response = requests.get(self.url_command, params={'move': prediction})
     if response.status_code == 200:
       print(type(self).__name__, "Command sent successfully", response.content)
     else:
       print(type(self).__name__, "Failed to send command to server")
 
-    self.idx += 1
-    if self.idx >= len(self.move):
-      self.idx = 0
+  def draw_prediction(self, prediction):
+    overlay = np.ones_like(self.frame) * 0
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    font_scale = 4
+    font_thickness = 8
+
+    (text_width, text_height), _ = cv2.getTextSize('F', font, font_scale, font_thickness)
+
+    x = self.frame.shape[1] - text_width - 10
+    y = text_height + 10
+
+    cv2.putText(overlay, prediction, (x, y), font, font_scale, (0, 0, 255), font_thickness)
+    self.frame_play = cv2.addWeighted(self.frame, 1, overlay, 1.5, 0)
+
+  def play(self):
+    if self.frame_play is not None:
+      cv2.imshow('Frame', self.frame_play)
+      cv2.waitKey(1)
 
 
 class RobotCommandsDaemon(BaseRobotCommandsDaemon):
@@ -64,13 +68,13 @@ class RobotCommandsDaemon(BaseRobotCommandsDaemon):
     prediction = self.model.predict(self.frame)
     print(type(self).__name__, "prediction", prediction)
 
+    self.command(prediction)
+    self.draw_prediction(prediction)
+
 
 if __name__ == "__main__":
   cmd = RobotCommandsDaemon(ip="127.0.0.1", period=0.1)
   cmd.start()
-
-  cmdt = RobotDummyCommandsDaemon(ip="127.0.0.1", period=3)
-  cmdt.start()
 
   while(True):
     cmd.play()

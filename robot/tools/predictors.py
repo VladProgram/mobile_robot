@@ -6,8 +6,16 @@ import numpy as np
 
 
 class DummyPredictor:
+  def __init__(self):
+    self.idx = 0
+    self.move = ['F', 'F', 'R', 'F', 'R', 'F', 'F', 'R', 'F', 'R', 'F', 'F']
+
   def predict(self, frame_array):
-    return "test"
+    result = self.move[self.idx]
+    self.idx += 1
+    if self.idx >= len(self.move):
+      self.idx = 0
+    return result
 
 
 class ClientOpenAIPredictor:
