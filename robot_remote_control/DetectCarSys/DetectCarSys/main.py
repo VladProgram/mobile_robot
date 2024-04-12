@@ -6,9 +6,9 @@ from waitress import serve
 
 #serial setting
 ser = serial.Serial('/dev/ttyACM0', 9600)
-time.sleep(2)  
+time.sleep(2)
 
-#flask(web server) setting 
+#flask(web server) setting
 app = Flask(__name__)
 
 #define pass for captures from camera
@@ -20,11 +20,15 @@ UPLOAD_FOLDER = 'static/Capture'
 def index():
     return render_template('index.html')
 
+@app.route('/frame')
+def frame():
+    return render_template('frame.html')
+
 #route for sending buttom value for Arduino to operate moter
 #receiving value from Web server's controller by json
 @app.route('/send_data', methods=['POST'])
 def send_data():
-    data = request.get_json()  
+    data = request.get_json()
     button_value = data['button_value']
     print('Received value:', button_value)
     ser.write(f"{button_value}\n".encode())
@@ -48,7 +52,7 @@ if __name__ == '__main__':
     #app.run(debug=True, host = '0.0.0.0')
 
     #Web server by waitress
-    serve(app, host='0.0.0.0', port=5000)
+    serve(app, host='0.0.0.0', port=9901)
 
 #program when stop running
 if KeyboardInterrupt:

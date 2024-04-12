@@ -14,7 +14,7 @@ while True:
 
         # Send captures for web server established by Raspberry pi
         response = requests.post(
-            'http://192.168.1.30:5000/upload',
+            'http://127.0.0.1:9901/upload',
             files={'image': buffer.tobytes()}
         )
         print("Image uploaded")
