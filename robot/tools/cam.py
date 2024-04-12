@@ -15,7 +15,7 @@ class CameraDaemon(DaemonBase):
     time.sleep(1)
 
   def close(self):
-    self.cap.close()
+    self.cap.release()
 
   def read(self):
     ret, self.frame = self.cap.read()
